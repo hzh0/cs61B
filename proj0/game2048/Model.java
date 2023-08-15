@@ -1,5 +1,6 @@
 package game2048;
 
+import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.Observable;
 
@@ -94,6 +95,54 @@ public class Model extends Observable {
         setChanged();
     }
 
+    public boolean tiltCol(int col) {
+        boolean moved = false;
+        ArrayList<Integer> arrayList = new ArrayList<>();
+        int sz = board.size();
+        for (int i = sz-1; i >= 0; --i) {
+            if (board.tile(col, i) != null) {
+                arrayList.add(i);
+            }
+        }
+        if (arrayList.isEmpty()) {
+            return moved;
+        }
+
+        int curTop = sz-1;
+        boolean merge = true;
+        if (board.tile(col, curTop) == null) {
+            moved = true;
+            board.move(col, curTop, board.tile(col, arrayList.get(0)));
+        }
+
+        for (int i = 1; i < arrayList.size(); ++i) {
+            Tile curTile = board.tile(col, arrayList.get(i));
+            Tile preTile = board.tile(col, curTop);
+            if (merge) {
+                if (curTile.value() == preTile.value()) {
+                    board.move(col, curTop, curTile);
+                    moved = true;
+                    merge = false;
+                    score += 2*curTile.value();
+                    --curTop;
+                }
+                else {
+                    --curTop;
+                    board.move(col, curTop, curTile);
+                    moved = curTop != arrayList.get(i);
+                }
+            }
+            else {
+                if (curTop != arrayList.get(i)) {
+                    moved = true;
+                }
+                merge = true;
+                board.move(col, curTop, curTile);
+            }
+        }
+        return moved;
+    }
+
     /** Tilt the board toward SIDE. Return true iff this changes the board.
      *
      * 1. If two Tile objects are adjacent in the direction of motion and have
@@ -110,10 +159,11 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
-        // TODO: Modify this.board (and perhaps this.score) to account
-        // for the tilt to the Side SIDE. If the board changed, set the
-        // changed local variable to true.
-
+        board.setViewingPerspective(side);
+        for (int col = 0; col < board.size(); ++col) {
+            changed |= tiltCol(col);
+        }
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
@@ -137,7 +187,14 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        int sz = b.size();
+        for (int i = 0; i < sz; ++i) {
+            for (int j = 0; j < sz; ++j) {
+                if (b.tile(i, j)== null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -147,7 +204,14 @@ public class Model extends Observable {
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
+        int sz = b.size();
+        for (int i = 0; i < sz; ++i) {
+            for (int j = 0; j < sz; ++j) {
+                if (b.tile(i,j) != null && b.tile(i, j).value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -158,8 +222,40 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
-        return false;
+        int sz = b.size();
+        for (int i = 0; i < sz-1; ++i) {
+            for (int j = 0; j < sz-1; ++j) {
+                Tile cur = b.tile(i, j);
+                Tile right = b.tile(i,j+1);
+                Tile down = b.tile(i+1, j);
+                if (cur == null || right == null || down == null) {
+                    return true;
+                }
+                if (cur.value() == right.value() || cur.value() == down.value()) {
+                    return true;
+                }
+            }
+        }
+        for (int i = 0; i < sz-1; ++i) {
+            Tile cur = b.tile(i, sz-1);
+            Tile down = b.tile(i+1, sz-1);
+            if (cur == null || down == null) {
+                return true;
+            }
+            if (cur.value() == down.value()) {
+                return true;
+            }
+
+            Tile cur1 = b.tile(sz-1, i);
+            Tile right = b.tile(sz-1, i+1);
+            if (cur1 == null || right == null) {
+                return true;
+            }
+            if (cur1.value() == down.value()) {
+                return true;
+            }
+        }
+        return emptySpaceExists(b);
     }
 
 
