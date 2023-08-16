@@ -10,10 +10,15 @@ public class ArrayDeque<T> implements Deque<T> {
     private T[] array;
     private int size = 0;
     private int capacity = 8;
-    private int first = 4;
-    private int last  = 4;
+    private int first = 0;
+    private int last  = 0;
     public ArrayDeque() {
         array = (T[]) new Object[8];
+    }
+
+    public ArrayDeque(int cap) {
+        capacity = cap <= 0 ? 8 : cap;
+        array = (T[]) new Object[capacity];
     }
     @Override
     public void addFirst(T item) {
@@ -58,6 +63,8 @@ public class ArrayDeque<T> implements Deque<T> {
     public int getCapacity() {
         return capacity;
     }
+
+    public void setCapacity(int cap) { capacity = cap; }
 
     @Override
     public void printDeque() {
@@ -107,6 +114,14 @@ public class ArrayDeque<T> implements Deque<T> {
         }
         return array[(index+first) % capacity];
 
+    }
+
+    public T set(int index, T t) {
+        T old = get(index);
+        if (old != null) {
+            array[(index+first) % capacity] = t;
+        }
+        return old;
     }
 
     public double getUsage() {
